@@ -1,0 +1,13 @@
+8번 문제
+public class Calculation {
+    public static void main(String[] args) {
+        int y = 5; 
+        int x = (y + 4) * 3;
+        System.out.println(x);
+    }
+}
+
+9번 문제 
+부호없는 이진수 A-B계산하ㅡㄴㄴ 방법
+B의 2의 보수 구하고 A와 B의 2의 보수를 더한다
+-> carry는 버리면 남는 값이 A-B
