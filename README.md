@@ -1,4 +1,4 @@
-ftpserver.ksecole.kr
+[ftpserver.ksecole.kr](https://ftpserver.aixlab.kr/)
 
 id : assem
 
