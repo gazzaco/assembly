@@ -4,11 +4,11 @@
 operand
 
 
-\'\'\'
+```
 mov ecx, 1
 sub ecs,1
 mov eax, 0FFFFFFFFh
 inc eax
 inc eax
 dec eax
-\'\'\'
+```
