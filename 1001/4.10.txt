@@ -1,0 +1,188 @@
+[ 4.10 Programming Exercises ]
+
+* 1. Converting from Big Endian to Little Endian
+* 해석: 아래 변수들과 MOV 명령어를 사용하여 빅 엔디안(Big Endian)에서 바이트 순서를 뒤집어 릴틀 엔디안(Little Endian)으로 복사하는 프로그램을 작성하라. 32비트 값은 12345678 16진수로 이해된다.
+  .data
+  bigEndian BYTE 12h, 34h, 56h, 78h
+  littleEndian DWORD ?
+
+* 풀이:
+  ```assembly
+  .data
+  bigEndian BYTE 12h, 34h, 56h, 78h
+  littleEndian DWORD ?
+
+  .code
+  mov al, bigEndian       ; 12h
+  mov ah, [bigEndian+1]   ; 34h
+  mov WORD PTR littleEndian, ax       ; 하위 워드에 저장 (바이트 역순: 3412h)
+  
+  mov al, [bigEndian+2]   ; 56h
+  mov ah, [bigEndian+3]   ; 78h
+  mov WORD PTR littleEndian+2, ax     ; 상위 워드에 저장 (바이트 역순: 7856h)
+  ; 결과적으로 littleEndian은 78563412h 값을 가지게 됨
+  ```
+
+
+* 2. Exchanging Pairs of Array Values
+* 해석: 짝수 개의 요소를 가진 배열에서 모든 값의 쌍을 서로 교환하는 루프와 인덱스 주소 지정 방식을 사용하는 프로그램을 작성하라. 즉, 항목 i는 항목 i+1과 교환되고, 항목 i+2는 항목 i+3과 교환되는 식이다.
+
+* 풀이:
+  ```assembly
+  .data
+  array WORD 10h, 20h, 30h, 40h, 50h, 60h
+  arraySize = ($ - array) / TYPE array
+
+  .code
+  mov ecx, arraySize / 2  ; 쌍의 개수만큼 반복
+  mov esi, 0
+  L1:
+    mov ax, array[esi*2]        ; 첫 번째 요소
+    mov dx, array[(esi*2)+2]    ; 두 번째 요소
+    mov array[esi*2], dx        ; 값 교환
+    mov array[(esi*2)+2], ax
+    add esi, 2                  ; 다음 쌍으로 이동
+    loop L1
+  ```
+
+
+* 3. Summing the Gaps between Array Values
+* 해석: 연속된 배열 요소들 사이의 모든 간격(gap)의 합을 계산하는 루프와 인덱스 주소 지정 방식을 사용하는 프로그램을 작성하라. 배열 요소는 오름차순으로 정렬된 더블워드이다. 예를 들어 배열 {0, 2, 5, 9, 10}은 2, 3, 4, 1의 간격을 가지며 그 합은 10이다.
+
+* 풀이:
+  ```assembly
+  .data
+  array DWORD 0, 2, 5, 9, 10
+  arraySize = ($ - array) / TYPE array
+
+  .code
+  mov ecx, arraySize - 1  ; 간격의 개수는 요소 개수 - 1
+  mov esi, 0
+  mov eax, 0              ; 합계를 저장할 EAX 초기화
+  L1:
+    mov edx, array[(esi+1)*4]
+    sub edx, array[esi*4]   ; 현재 요소와 다음 요소의 차이 계산
+    add eax, edx            ; 합계에 누적
+    inc esi
+    loop L1
+  ```
+
+
+* 4. Copying a Word Array to a DoubleWord array
+* 해석: 부호 없는 워드(16비트) 배열의 모든 요소를 부호 없는 더블워드(32비트) 배열로 복사하는 루프를 사용하는 프로그램을 작성하라.
+
+* 풀이:
+  ```assembly
+  .data
+  sourceWord WORD 1000h, 2000h, 3000h
+  targetDWord DWORD LENGTHOF sourceWord DUP(?)
+  
+  .code
+  mov ecx, LENGTHOF sourceWord
+  mov esi, 0
+  L1:
+    movzx eax, sourceWord[esi*2]  ; 제로 확장하여 32비트로 가져옴
+    mov targetDWord[esi*4], eax   ; 더블워드 배열에 저장
+    inc esi
+    loop L1
+  ```
+
+
+* 5. Fibonacci Numbers
+* 해석: 다음 공식에 의해 설명되는 피보나치 수열의 첫 7개 값을 계산하기 위해 루프를 사용하는 프로그램을 작성하라: Fib(1) = 1, Fib(2) = 1, Fib(n) = Fib(n-1) + Fib(n-2).
+
+* 풀이:
+  ```assembly
+  .data
+  fibValues DWORD 7 DUP(?)
+
+  .code
+  mov ecx, 5              ; 첫 2개는 미리 넣으므로 5번 반복
+  mov edx, 1
+  mov dword ptr fibValues, 1      ; Fib(1) = 1
+  mov dword ptr fibValues+4, 1    ; Fib(2) = 1
+  mov esi, 2
+  
+  L1:
+    mov eax, fibValues[(esi-1)*4]
+    add eax, fibValues[(esi-2)*4]
+    mov fibValues[esi*4], eax
+    inc esi
+    loop L1
+  ```
+
+
+* 6. Reverse an Array
+* 해석: 간접 또는 인덱스 주소 지정 방식을 사용하는 루프를 이용하여 정수 배열의 요소를 제자리에서(in place) 역순으로 정렬하라. 다른 배열로 복사하지 마라. 향후 배열 크기나 타입이 변경될 때 프로그램이 최대한 유연해지도록 SIZEOF, TYPE, LENGTHOF 연산자를 사용하라.
+
+* 풀이:
+  ```assembly
+  .data
+  array DWORD 10, 20, 30, 40, 50
+  arrCount = LENGTHOF array
+  
+  .code
+  mov ecx, arrCount / 2   ; 배열 길이의 절반만 반복
+  mov esi, 0              ; 시작 인덱스
+  mov edi, arrCount - 1   ; 끝 인덱스
+  
+  L1:
+    mov eax, array[esi*TYPE array]
+    mov edx, array[edi*TYPE array]
+    mov array[esi*TYPE array], edx
+    mov array[edi*TYPE array], eax
+    inc esi
+    dec edi
+    loop L1
+  ```
+
+
+* 7. Copy a String in Reverse Order
+* 해석: 문자열을 source에서 target으로 복사하되, 과정에서 문자 순서를 뒤집는 루프와 간접 주소 지정 방식을 사용하는 프로그램을 작성하라. 다음 변수들을 사용하라:
+  source BYTE "This is the source string", 0
+  target BYTE SIZEOF source DUP('#')
+
+* 풀이:
+  ```assembly
+  .data
+  source BYTE "This is the source string", 0
+  target BYTE SIZEOF source DUP('#')
+
+  .code
+  mov ecx, SIZEOF source - 1  ; 널 문자(0)를 제외한 길이
+  mov esi, 0
+  mov edi, ecx - 1            ; target의 마지막 유효 문자 위치
+  
+  L1:
+    mov al, source[esi]
+    mov target[edi], al
+    inc esi
+    dec edi
+    loop L1
+  
+  mov target[SIZEOF source - 1], 0  ; 널 문자 복사 마무리
+  ```
+
+
+* 8. Shifting the Elements in an Array
+* 해석: 루프와 인덱스 주소 지정 방식을 사용하여 32비트 정수 배열의 원소들을 앞으로 한 자리씩 회전(rotate)시키는 코드를 작성하라. 배열 끝의 값은 첫 번째 위치로 순환(wrap around)되어야 한다. 예를 들어 배열 [10,20,30,40]은 [40,10,20,30]으로 변환된다.
+
+* 풀이:
+  ```assembly
+  .data
+  array DWORD 10, 20, 30, 40
+  arrLen = LENGTHOF array
+
+  .code
+  mov eax, array[(arrLen-1)*4]  ; 마지막 요소를 백업해둠
+  mov ecx, arrLen - 1
+  mov esi, arrLen - 1
+  
+  L1:
+    mov edx, array[(esi-1)*4]
+    mov array[esi*4], edx
+    dec esi
+    loop L1
+    
+  mov array[0], eax             ; 백업해둔 마지막 요소를 맨 처음에 넣음
+  ```
