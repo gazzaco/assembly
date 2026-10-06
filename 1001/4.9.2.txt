@@ -1,0 +1,178 @@
+
+4.9.2 Algorithm Workbench (알고리즘 워크벤치)
+
+1.
+- 해석: 'three'라는 이름의 더블워드 변수 안에서 상위 워드와 하위 워드를 서로 교환하는 MOV 명령어 시퀀스를 작성하라.
+- 풀이:
+  ```assembly
+  mov ax, WORD PTR three      ; 하위 워드를 AX에 저장
+  mov dx, WORD PTR three+2    ; 상위 워드를 DX에 저장
+  mov WORD PTR three, dx      ; 상위 워드를 하위 위치에 저장
+  mov WORD PTR three+2, ax    ; 하위 워드를 상위 위치에 저장
+  ```
+
+2.
+- 해석: XCHG 명령어를 3번 이하로 사용하여, 4개의 8비트 레지스터 값의 순서를 A, B, C, D에서 B, C, D, A로 재정렬하라.
+- 풀이:
+  ```assembly
+  xchg al, bl  ; AL과 BL 교환 (현재 AL에 B, BL에 A)
+  xchg al, cl  ; AL과 CL 교환 (현재 AL에 C, CL에 B)
+  xchg al, dl  ; AL과 DL 교환 (현재 AL에 D, DL에 C, 그리고 최종적으로 AL에 A가 올바른 위치로 감)
+  ```
+  *(참고: 레지스터 이름을 임의의 8비트 레지스터 AL, BL, CL, DL로 가정하여 작성)*
+
+3.
+- 해석: 전송되는 메시지에는 1 비트의 개수가 짝수가 되도록 맞추는 패리티 비트가 포함되곤 한다. AL 레지스터의 메시지 바이트가 01110101을 담고 있다고 가정하자. 이 메시지 바이트가 짝수 패리티인지 홀수 패리티인지 판별하기 위해 산술 연산 명령어와 결합된 패리티 플래그를 어떻게 사용할 수 있는지 보여라.
+- 풀이:
+  - AL에 01110101b를 넣고 자기 자신과 더하거나 0을 더하는 연산을 수행하면 패리티 플래그가 갱신된다.
+  ```assembly
+  mov al, 01110101b
+  add al, 0         ; 또는 or al, al
+  ; 이 연산 직후 Parity Flag(PF)를 확인한다.
+  ; PF = 1이면 1의 개수가 짝수(Even parity), PF = 0이면 홀수(Odd parity)이다.
+  ```
+
+4.
+- 해석: 오버플로우 플래그가 설정되도록 두 개의 음수를 더하는 바이트 피연산자 코드를 작성하라.
+- 풀이:
+  ```assembly
+  mov al, -100
+  add al, -50   ; -100 + (-50) = -150으로 8비트 범위를 초과하여 오버플로우 발생
+  ```
+
+5.
+- 해석: 덧셈을 사용하여 제로 플래그와 캐리 플래그를 동시에 설정하는 두 개의 명령어 시퀀스를 작성하라.
+- 풀이:
+  ```assembly
+  mov al, 0FFh
+  add al, 1     ; FFh + 1 = 00h (결과가 0이므로 Zero Flag = 1, 자리올림이 발생하므로 Carry Flag = 1)
+  ```
+
+6.
+- 해석: 뺄셈을 사용하여 캐리 플래그를 설정하는 두 개의 명령어 시퀀스를 작성하라.
+- 풀이:
+  ```assembly
+  mov al, 5
+  sub al, 10    ; 5 - 10 = -5로 borrow가 발생하여 Carry Flag = 1
+  ```
+
+7.
+- 해석: 어셈블리어로 다음 산술식을 구현하라: EAX = -val2 + 7 - val3 + val1. val1, val2, val3은 32비트 정수 변수라고 가정한다.
+- 풀이:
+  ```assembly
+  mov eax, val2
+  neg eax             ; -val2
+  add eax, 7          ; -val2 + 7
+  sub eax, val3       ; -val2 + 7 - val3
+  add eax, val1       ; -val2 + 7 - val3 + val1
+  ```
+
+8.
+- 해석: 인덱스 주소 지정 방식과 스케일 팩터를 사용하여 더블워드 배열을 순회하고 그 요소들의 합을 계산하는 루프를 작성하라.
+- 풀이:
+  ```assembly
+  mov ecx, 5          ; 배열 크기(요소 개수)가 5라고 가정
+  mov esi, 0          ; 인덱스 초기화
+  mov eax, 0          ; 합계를 저장할 EAX 초기화
+  L1:
+    add eax, array[esi*4] ; 4바이트(더블워드) 스케일 팩터 적용
+    inc esi
+    loop L1
+  ```
+
+9.
+- 해석: 다음 식을 어셈블리어로 구현하라: AX = (val2 + BX) - val4. val2와 val4는 16비트 정수 변수라고 가정한다.
+- 풀이:
+  ```assembly
+  mov ax, val2
+  add ax, bx          ; val2 + BX
+  sub ax, val4        ; (val2 + BX) - val4
+  ```
+
+10.
+- 해석: 캐리 플래그와 오버플로우 플래그를 동시에 설정하는 두 개의 명령어 시퀀스를 작성하라.
+- 풀이:
+  ```assembly
+  mov al, 7Fh         ; 부호 있는 양의 최대값 (127)
+  add al, 2           ; 127 + 2 = 129 (-127이 되며 부호가 바뀌어 Overflow = 1, 동시에 상위 비트 캐리 발생 가능)
+  ; 또는
+  mov al, 80h         ; -128
+  add al, 80h         ; -128 + (-128) = -256 (Overflow 발생 및 Carry 발생)
+  ```
+
+11.
+- 해석: INC 및 DEC 명령어 실행 후 부호 없는 오버플로우를 나타내는 데 제로 플래그가 어떻게 사용될 수 있는지 보여주는 명령어 시퀀스를 작성하라.
+- 풀이:
+  - INC와 DEC 명령어는 캐리 플래그(CF)에 영향을 주지 않는다. 따라서 부호 없는 오버플로우(예: 0FFFFFFFFh에서 INC하여 0이 되는 경우)를 확인할 때 제로 플래그를 활용할 수 있다.
+  ```assembly
+  inc eax
+  jz overflow_detected ; 결과가 0이 되었다면 부호 없는 오버플로우(또는 롤오버)가 발생한 것
+  ```
+
+12.
+- 해석: 주어진 데이터에 myBytes를 짝수 주소로 정렬(align)하는 지시어를 삽입하라.
+- 풀이:
+  ```assembly
+  .data
+  ALIGN 2            ; 짝수 주소 정렬 지시어
+  myBytes BYTE 10h, 20h, 30h, 40h
+  ```
+
+13.
+- 해석: 다음 각 명령어들이 실행된 후 EAX의 값은 무엇인가?
+  mov eax, TYPE myBytes     ; a.
+  mov eax, LENGTHOF myBytes ; b.
+  mov eax, SIZEOF myBytes   ; c.
+  mov eax, TYPE myWords     ; d.
+  mov eax, LENGTHOF myWords ; e.
+  mov eax, SIZEOF myWords   ; f.
+  mov eax, SIZEOF myString  ; g.
+- 풀이 (주어진 데이터 정의 기준):
+  - myBytes BYTE 10h, 20h, 30h, 40h (총 4바이트, 요소 크기 1)
+  - myWords WORD 3 DUP(?), 2000h (총 4개 요소, 각 2바이트)
+  - myString BYTE "ABCDE" (총 5바이트)
+  - a. TYPE myBytes = 1 (바이트 단위이므로 1)
+  - b. LENGTHOF myBytes = 4 (요소 개수 4)
+  - c. SIZEOF myBytes = 4 (4 * 1 = 4바이트)
+  - d. TYPE myWords = 2 (WORD이므로 2바이트)
+  - e. LENGTHOF myWords = 4 (3 DUP(?) + 2000h = 총 4개 요소)
+  - f. SIZEOF myWords = 8 (4개 요소 * 2바이트 = 8바이트)
+  - g. SIZEOF myString = 5 ("ABCDE"는 5바이트)
+    결과: a. 1, b. 4, c. 4, d. 2, e. 4, f. 8, g. 5
+
+14.
+- 해석: myBytes의 첫 두 바이트를 DX 레지스터로 옮기는 단일 명령어를 작성하라. 결과 값은 2010h가 된다.
+- 풀이:
+  ```assembly
+  mov dx, WORD PTR myBytes
+  ```
+
+15.
+- 해석: myWords의 두 번째 바이트를 AL 레지스터로 옮기는 명령어를 작성하라.
+- 풀이:
+  ```assembly
+  mov al, BYTE PTR myWords+1
+  ```
+
+16.
+- 해석: myBytes의 네 바이트 전부를 EAX 레지스터로 옮기는 명령어를 작성하라.
+- 풀이:
+  ```assembly
+  mov eax, DWORD PTR myBytes
+  ```
+
+17.
+- 해석: myWords가 32비트 레지스터로 직접 옮겨질 수 있도록 허용하는 LABEL 지시어를 주어진 데이터에 삽입하라.
+- 풀이:
+  ```assembly
+  myWordsLabel LABEL DWORD
+  myWords WORD 3 DUP(?), 2000h
+  ```
+
+18.
+- 해석: myBytes가 16비트 레지스터로 직접 옮겨질 수 있도록 허용하는 LABEL 지시어를 주어진 데이터에 삽입하라.
+- 풀이:
+  ```assembly
+  myBytesLabel LABEL WORD
+  myBytes BYTE 10h, 20h, 30h, 40h
+  ```
