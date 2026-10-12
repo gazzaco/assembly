@@ -1,0 +1,114 @@
+[6.10.2 Algorithm Workbench]
+
+1. AL에 있는 ASCII 숫자를 대응하는 이진 값으로 변환하는 단일 명령어를 작성하시오. 만약 AL이 이미 이진 값(00h ~ 09h)을 포함하고 있다면 그대로 두시오.
+   - 정답: and al, 0Fh (또는 sub al, '0' / sub al, 30h)
+   - 해설: ASCII 문자 '0'~'9'는 30h~39h이므로 하위 4비트만 남기거나 30h를 빼면 대응하는 수(0~9)가 됩니다.
+
+2. 32비트 메모리 피연산자의 패리티(parity)를 계산하는 명령어를 작성하시오. 힌트: 이 섹션 앞부분에 제시된 공식을 사용하시오: B0 XOR B1 XOR B2 XOR B3.
+   - 정답: 
+     mov al, byte ptr [mem32]
+     xor al, byte ptr [mem32+1]
+     xor al, byte ptr [mem32+2]
+     xor al, byte ptr [mem32+3]
+     ; 이제 AL에 결과 패리티 바이트가 계산됨
+
+3. SetX와 SetY라는 두 개의 비트 맵핑된 집합(bit-mapped sets)이 주어졌을 때, SetX에는 속하지만 SetY에는 속하지 않는 원소들을 나타내는 비트 문자열을 EAX에 생성하는 명령어 시퀀스를 작성하시오.
+   - 정답:
+     mov eax, SetX
+     not edx            ; 또는 적절한 레지스터 활용
+     and eax, not SetY  ; (구현 방식에 따라 mov eax, SetX 후 and eax, [not SetY])
+
+4. DX의 부호 없는 정수가 CX의 정수보다 작거나 같을 때 레이블 L1으로 점프하는 명령어를 작성하시오.
+   - 정답:
+     cmp dx, cx
+     jbe L1
+
+5. AX의 부호 있는 정수가 CX의 정수보다 클 때 레이블 L2로 점프하는 명령어를 작성하시오.
+   - 정답:
+     cmp ax, cx
+     jg  L2
+
+6. 먼저 AL의 비트 0과 1을 클리어(0으로 설정)하는 명령어를 작성하시오. 그 후, 목적지 피연산자가 0과 같으면 코드가 레이블 L3으로 점프하고, 그렇지 않으면 레이블 L4로 점프하도록 하시오.
+   - 정답:
+     and al, 11111100b  ; 비트 0, 1 클리어 (또는 and al, 0FCh)
+     cmp al, 0
+     je  L3
+     jmp L4
+
+7. 다음 의사 코드를 어셈블리어로 구현하시오. 단락 회전 평가(short-circuit evaluation)를 사용하고, val1과 X는 32비트 변수라고 가정하시오.
+   if( val1 > ecx ) AND ( ecx > edx )
+       X = 1
+   else
+       X = 2;
+   - 정답:
+     mov eax, val1
+     cmp eax, ecx
+     jle L_Else
+     cmp ecx, edx
+     jle L_Else
+     mov X, 1
+     jmp L_End
+   L_Else:
+     mov X, 2
+   L_End:
+
+8. 다음 의사 코드를 어셈블리어로 구현하시오. 단락 회전 평가를 사용하고, X는 32비트 변수라고 가정하시오.
+   if( ebx > ecx ) OR ( ebx > val1 )
+       X = 1
+   else
+       X = 2;
+   - 정답:
+     cmp ebx, ecx
+     jg  L_Then
+     cmp ebx, val1
+     jg  L_Then
+     mov X, 2
+     jmp L_End
+   L_Then:
+     mov X, 1
+   L_End:
+
+9. 다음 의사 코드를 어셈블리어로 구현하시오. 단락 회전 평가를 사용하고, X는 32비트 변수라고 가정하시오.
+   if ( ebx > ecx AND ebx > edx) OR ( edx > eax )
+       X = 1
+   else
+       X = 2;
+   - 정답:
+     cmp edx, eax
+     jg  L_Then
+     cmp ebx, ecx
+     jle L_Else
+     cmp ebx, edx
+     jle L_Else
+   L_Then:
+     mov X, 1
+     jmp L_End
+   L_Else:
+     mov X, 2
+   L_End:
+
+10. 다음 의사 코드를 어셈블리어로 구현하시오. 단락 회전 평가를 사용하고, A, B, N은 32비트 부호 있는 정수라고 가정하시오.
+    while N > 0
+        if N != 3 AND (N < A OR N > B)
+            N = N - 2
+        else
+            N = N - 1
+    end while
+    - 정답:
+      L_While:
+      cmp N, 0
+      jle L_EndWhile
+      cmp N, 3
+      je  L_Else
+      cmp N, A
+      jl  L_Then
+      cmp N, B
+      jg  L_Then
+      jmp L_Else
+      L_Then:
+      sub N, 2
+      jmp L_While
+      L_Else:
+      sub N, 1
+      jmp L_While
+      L_EndWhile:
