@@ -1,0 +1,176 @@
+7.9.1
+
+1. 다음 코드 시퀀스에서 각 시프트 또는 로테이트 명령어가 실행된 후 AL의 값을 제시하시오.
+[코드]
+mov al, 0D4h
+shr al, 1 ; a.
+mov al, 0D4h
+sar al, 1 ; b.
+mov al, 0D4h
+sar al, 4 ; c.
+mov al, 0D4h
+rol al, 1 ; d.
+
+[정답]
+a. 6Ah
+b. EAh
+c. FEh
+d. A9h
+
+---
+
+2. 다음 코드 시퀀스에서 각 시프트 또는 로테이트 명령어가 실행된 후 AL의 값을 제시하시오.
+[코드]
+mov al, 0D4h
+ror al, 3 ; a.
+mov al, 0D4h
+rol al, 7 ; b.
+stc
+mov al, 0D4h
+rcl al, 1 ; c.
+stc
+mov al, 0D4h
+rcr al, 3 ; d.
+
+[정답]
+a. 9Ah
+b. 6Ah
+c. A9h
+d. FAh
+
+---
+
+3. 다음 연산이 실행된 후 AX와 DX의 값은 무엇인가?
+[코드]
+mov dx, 0
+mov ax, 222h
+mov cx, 100h
+mul cx
+
+[정답]
+AX = 2200h
+DX = 0002h
+
+---
+
+4. 다음 연산이 실행된 후 AX의 값은 무엇인가?
+[코드]
+mov ax, 63h
+mov bl, 10h
+div bl
+
+[정답]
+AX = 0306h (AL = 06h [몫], AH = 03h [나머지])
+
+---
+
+5. 다음 연산이 실행된 후 EAX와 EDX의 값은 무엇인가?
+[코드]
+mov eax, 123400h
+mov edx, 0
+mov ebx, 10h
+div ebx
+
+[정답]
+EAX = 00012340h
+EDX = 00000000h
+
+---
+
+6. 다음 연산이 실행된 후 AX와 DX의 값은 무엇인가?
+[코드]
+mov ax, 4000h
+mov dx, 500h
+mov bx, 10h
+div bx
+
+[정답]
+AX = 0000h
+DX = 0004h (DX:AX = 05004000h / 10h -> 몫=50040000h가 AX(16비트) 범위를 초과하여 나누기 오버플로 발생, 또는 몫 AX=0000h, 나머지 DX=0004h)
+
+---
+
+7. 다음 명령어들이 실행된 후 BX의 값은 무엇인가?
+[코드]
+mov bx, 5
+stc
+mov ax, 60h
+adc bx, ax
+
+[정답]
+BX = 0066h (5 + 60h + 1 = 66h)
+
+---
+
+8. 64비트 모드에서 다음 코드가 실행될 때의 출력을 설명하시오.
+[코드]
+.data
+dividend_hi QWORD 00000108h
+dividend_lo QWORD 33300020h
+divisor QWORD 00000100h
+.code
+mov rdx, dividend_hi
+mov rax, dividend_lo
+div divisor
+
+[정답]
+RAX = 0000010833300020h
+RDX = 0000000000000020h
+
+---
+
+9. 다음 프로그램은 val1에서 val2를 빼는 프로그램이다. 모든 논리 오류를 찾아 수정하시오. (CLC는 Carry 플래그를 지움)
+[코드]
+.data
+val1 QWORD 20403004362047A1h
+val2 QWORD 055210304A2630B2h
+result QWORD 0
+
+.code
+mov cx, 8 ; loop counter
+mov esi, val1 ; set index to start
+mov edi, val2
+clc ; clear Carry flag
+top:
+mov al, BYTE PTR[esi] ; get first number
+sbb al, BYTE PTR[edi] ; subtract second
+mov BYTE PTR[esi], al ; store the result
+dec esi
+dec edi
+loop top
+
+[정답]
+수정된 코드:
+.data
+val1 QWORD 20403004362047A1h
+val2 QWORD 055210304A2630B2h
+result QWORD 0
+
+.code
+mov cx, 8
+mov esi, OFFSET val1
+mov edi, OFFSET val2
+clc
+top:
+mov al, BYTE PTR[esi]
+sbb al, BYTE PTR[edi]
+mov BYTE PTR[esi], al
+inc esi
+inc edi
+loop top
+
+오류 내용:
+1. `mov esi, val1` 및 `mov edi, val2`를 `mov esi, OFFSET val1`, `mov edi, OFFSET val2`로 수정해야 함 (주소 복사).
+2. `dec esi`, `dec edi`를 `inc esi`, `inc edi`로 수정해야 함 (리틀 엔디안 방식에 따라 최하위 바이트부터 시작하여 증가).
+
+---
+
+10. 64비트 모드에서 다음 명령어들이 실행된 후 RAX의 16진수 값은 무엇인가?
+[코드]
+.data
+multiplicand QWORD 0001020304050000h
+.code
+imul rax, multiplicand, 4
+
+[정답]
+RAX = 0004080C10140000h

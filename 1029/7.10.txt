@@ -1,0 +1,454 @@
+7.10 Programming Exercises (프로그래밍 실습 문제)
+
+1. Display ASCII Decimal (ASCII 10진수 표시)
+암시적 소수점을 가진 10진수 ASCII 숫자를 출력하는 WriteScaled라는 이름의 프로시저를 작성하시오. 다음과 같이 숫자가 정의되어 있고, DECIMAL_OFFSET이 숫자 오른쪽에서 5번째 위치에 소수점을 삽입해야 함을 나타낸다고 가정한다.
+
+DECIMAL_OFFSET = 5
+.data
+decimal_one BYTE "100123456789765"
+
+WriteScaled는 숫자를 다음과 같이 표시한다:
+1001234567.89765
+
+WriteScaled를 호출할 때, 숫자의 오프셋을 EDX에, 숫자 길이를 ECX에, 소수점 오프셋을 EBX에 전달하시오. 서로 다른 크기의 세 숫자를 WriteScaled 프로시저에 전달하는 테스트 프로그램을 작성하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+DECIMAL_OFFSET = 5
+
+.data
+decimal_one BYTE "100123456789765"
+decimal_two BYTE "12345678"
+decimal_three BYTE "9876543210"
+
+.code
+main PROC
+    mov edx, OFFSET decimal_one
+    mov ecx, LENGTHOF decimal_one
+    mov ebx, DECIMAL_OFFSET
+    call WriteScaled
+    call Crlf
+
+    mov edx, OFFSET decimal_two
+    mov ecx, LENGTHOF decimal_two
+    mov ebx, 2
+    call WriteScaled
+    call Crlf
+
+    mov edx, OFFSET decimal_three
+    mov ecx, LENGTHOF decimal_three
+    mov ebx, 4
+    call WriteScaled
+    call Crlf
+
+    exit
+main ENDP
+
+WriteScaled PROC
+    pushad
+    mov esi, edx
+    mov edi, ecx
+    sub edi, ebx
+
+L1:
+    cmp ecx, ebx
+    jne PrintChar
+    push eax
+    mov al, '.'
+    call WriteChar
+    pop eax
+
+PrintChar:
+    mov al, [esi]
+    call WriteChar
+    inc esi
+    loop L1
+
+    popad
+    ret
+WriteScaled ENDP
+END main
+
+---
+
+2. Extended Subtraction Procedure (확장 뺄셈 프로시저)
+임의 크기의 두 이진 정수를 뺄셈하는 Extended_Sub라는 프로시저를 만드시오. 두 정수의 저장 크기는 동일해야 하며 크기는 32비트의 배수여야 한다. 각각 최소 10바이트 이상의 여러 정수 쌍을 전달하는 테스트 프로그램을 작성하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+.data
+val1 BYTE 10h, 20h, 30h, 40h, 50h, 60h, 70h, 80h, 90h, 0A0h
+val2 BYTE 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah
+result BYTE 10 DUP(0)
+
+.code
+main PROC
+    mov esi, OFFSET val1
+    mov edi, OFFSET val2
+    mov ebx, OFFSET result
+    mov ecx, LENGTHOF val1
+    call Extended_Sub
+
+    mov esi, OFFSET result
+    mov ecx, LENGTHOF result
+L1:
+    mov al, [esi]
+    call WriteHexB
+    inc esi
+    loop L1
+    call Crlf
+
+    exit
+main ENDP
+
+Extended_Sub PROC
+    pushad
+    clc
+L1:
+    mov al, [esi]
+    sbb al, [edi]
+    mov [ebx], al
+    inc esi
+    inc edi
+    inc ebx
+    loop L1
+    popad
+    ret
+Extended_Sub ENDP
+END main
+
+---
+
+3. Packed Decimal Conversion (압축 10진수 변환)
+4바이트 압축 10진수 정수를 ASCII 10진수 숫자 문자열로 변환하는 PackedToAsc라는 프로시저를 작성하시오. 압축 정수와 ASCII 숫자를 저장할 버퍼의 주소를 프로시저에 전달하시오. 최소 5개의 압축 10진수 정수를 프로시저에 전달하는 짧은 테스트 프로그램을 작성하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+.data
+packed1 DWORD 12345678h
+packed2 DWORD 87654321h
+packed3 DWORD 05432109h
+packed4 DWORD 99999999h
+packed5 DWORD 00000001h
+buffer BYTE 9 DUP(0)
+
+.code
+main PROC
+    mov eax, packed1
+    mov edx, OFFSET buffer
+    call PackedToAsc
+    mov edx, OFFSET buffer
+    call WriteString
+    call Crlf
+
+    exit
+main ENDP
+
+PackedToAsc PROC
+    pushad
+    mov esi, edx
+    mov ecx, 4
+    add esi, 7
+    std
+
+L1:
+    mov dl, al
+    and dl, 0Fh
+    or dl, 30h
+    mov [esi], dl
+    dec esi
+
+    mov dl, al
+    shr dl, 4
+    or dl, 30h
+    mov [esi], dl
+    dec esi
+
+    shr eax, 8
+    loop L1
+
+    cld
+    mov BYTE PTR [edx + 8], 0
+    popad
+    ret
+PackedToAsc ENDP
+END main
+
+---
+
+4. Encryption Using Rotate Operations (로테이트 연산을 이용한 암호화)
+평문 바이트를 서로 다른 방향으로 다양한 횟수만큼 로테이트하여 간단한 암호화를 수행하는 프로시저를 작성하시오. 예를 들어 암호화 키를 나타내는 다음 배열에서 음수는 왼쪽 로테이트, 양수는 오른쪽 로테이트를 나타낸다. 각 위치의 정수는 로테이트 크기를 나타낸다.
+
+key BYTE -2, 4, 1, 0, -3, 5, 2, -4, -4, 6
+
+프로시저는 평문 메시지를 순회하며 메시지의 첫 10바이트에 키를 맞추어야 한다. 일치하는 키 배열 값에 지정된 양만큼 각 평문 바이트를 로테이트한다. 그런 다음 키를 메시지의 다음 10바이트에 맞추고 이 과정을 반복한다. 서로 다른 데이터 세트로 암호화 프로시저를 두 번 호출하여 테스트하는 프로그램을 작성하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+KEY_SIZE = 10
+
+.data
+key BYTE -2, 4, 1, 0, -3, 5, 2, -4, -4, 6
+message BYTE "This is a plain text message for encryption test.", 0
+
+.code
+main PROC
+    mov edx, OFFSET message
+    mov ecx, LENGTHOF message - 1
+    mov ebx, OFFSET key
+    call RotateEncrypt
+
+    mov edx, OFFSET message
+    call WriteString
+    call Crlf
+
+    exit
+main ENDP
+
+RotateEncrypt PROC
+    pushad
+    mov esi, 0
+
+L1:
+    push ecx
+    mov al, [edx + esi]
+    mov edi, esi
+    mov eax, esi
+    mov ecx, KEY_SIZE
+    cdq
+    idiv ecx
+    mov cl, key[edx]
+
+    mov al, [edx + esi]
+    cmp cl, 0
+    jge RotateRight
+
+RotateLeft:
+    neg cl
+    rol al, cl
+    jmp StoreResult
+
+RotateRight:
+    ror al, cl
+
+StoreResult:
+    mov [edx + esi], al
+    inc esi
+    pop ecx
+    loop L1
+
+    popad
+    ret
+RotateEncrypt ENDP
+END main
+
+---
+
+5. Prime Numbers (소수 구하기)
+에라토스테네스의 체(Sieve of Eratosthenes) 방법을 사용하여 2에서 1000 사이의 모든 소수를 생성하는 프로그램을 작성하시오. 인터넷에서 이 방법으로 소수를 찾는 많은 문헌을 찾을 수 있다. 모든 소수 값을 출력하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+SIZE = 1000
+
+.data
+sieve BYTE SIZE DUP(0)
+
+.code
+main PROC
+    mov ecx, SIZE
+    mov esi, 2
+
+L_outer:
+    cmp BYTE PTR sieve[esi], 1
+    je Next_i
+
+    mov eax, esi
+    call WriteDec
+    mov al, ' '
+    call WriteChar
+
+    mov edi, esi
+    add edi, esi
+L_inner:
+    cmp edi, SIZE
+    jge Next_i
+    mov BYTE PTR sieve[edi], 1
+    add edi, esi
+    jmp L_inner
+
+Next_i:
+    inc esi
+    cmp esi, SIZE
+    jl L_outer
+
+    call Crlf
+    exit
+main ENDP
+END main
+
+---
+
+6. Greatest Common Divisor (GCD) (최대공약수)
+두 정수의 최대공약수(GCD)는 두 정수를 나누어떨어지게 하는 가장 큰 정수이다. GCD 알고리즘은 다음 슈도코드로 설명되는 루프 내 정수 나눗셈을 포함한다:
+
+int GCD(int x, int y)
+{
+    x = abs(x)
+    y = abs(y)
+    do {
+        int n = x % y
+        x = y
+        y = n
+    } while (y > 0)
+    return x
+}
+
+이 함수를 어셈블리어로 구현하고, 서로 다른 값을 전달하여 함수를 여러 번 호출하는 테스트 프로그램을 작성하시오. 모든 결과를 화면에 출력하시오.
+
+[정답]
+INCLUDE Irvine32.inc
+
+.code
+main PROC
+    mov eax, 54
+    mov ebx, 24
+    call GCD
+    call WriteDec
+    call Crlf
+
+    mov eax, 42
+    mov ebx, 56
+    call GCD
+    call WriteDec
+    call Crlf
+
+    exit
+main ENDP
+
+GCD PROC
+    push ebx
+    push edx
+
+    cmp eax, 0
+    jge CheckY
+    neg eax
+CheckY:
+    cmp ebx, 0
+    jge LoopStart
+    neg ebx
+
+LoopStart:
+    mov edx, 0
+    div ebx
+    mov eax, ebx
+    mov ebx, edx
+    cmp ebx, 0
+    jg LoopStart
+
+    pop edx
+    pop ebx
+    ret
+GCD ENDP
+END main
+
+---
+
+7. Bitwise Multiplication (비트 단위 곱셈)
+시프트와 가산만을 사용하여 EAX에 임의의 32비트 부호 없는 정수를 곱하는 BitwiseMultiply라는 이름의 프로시저를 작성하시오. EBX 레지스터를 통해 정수를 프로시저에 전달하고, EAX 레지스터로 곱을 반환하시오. 프로시저를 호출하고 곱을 출력하는 짧은 테스트 프로그램을 작성하시오. (곱이 32비트보다 크지 않다고 가정함)
+
+[정답]
+INCLUDE Irvine32.inc
+
+.code
+main PROC
+    mov eax, 25
+    mov ebx, 10
+    call BitwiseMultiply
+    call WriteDec
+    call Crlf
+    exit
+main ENDP
+
+BitwiseMultiply PROC
+    push ebx
+    push ecx
+    push edx
+
+    mov ecx, eax
+    mov eax, 0
+
+L1:
+    test ebx, 1
+    jz SkipAdd
+    add eax, ecx
+
+SkipAdd:
+    shl ecx, 1
+    shr ebx, 1
+    jnz L1
+
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+BitwiseMultiply ENDP
+END main
+
+---
+
+8. Add Packed Integers (압축 정수 가산)
+섹션 7.6.1의 AddPacked 프로시저를 확장하여 임의 크기의 두 압축 10진수 정수(두 길이가 동일해야 함)를 더하도록 하시오. AddPacked에 4바이트, 8바이트, 16바이트의 여러 정수 쌍을 전달하는 테스트 프로그램을 작성하시오. 프로시저에 정보를 전달하기 위해 다음 레지스터를 사용하는 것을 권장한다:
+ESI - 첫 번째 숫자에 대한 포인터
+EDI - 두 번째 숫자에 대한 포인터
+EDX - 합계에 대한 포인터
+ECX - 더할 바이트 수
+
+[정답]
+INCLUDE Irvine32.inc
+
+.data
+num1 BYTE 12h, 34h, 56h, 78h
+num2 BYTE 87h, 65h, 43h, 21h
+sum  BYTE 4 DUP(0)
+
+.code
+main PROC
+    mov esi, OFFSET num1
+    mov edi, OFFSET num2
+    mov edx, OFFSET sum
+    mov ecx, LENGTHOF num1
+    call AddPacked
+
+    mov esi, OFFSET sum
+    mov ecx, LENGTHOF sum
+L1:
+    mov al, [esi]
+    call WriteHexB
+    inc esi
+    loop L1
+    call Crlf
+    exit
+main ENDP
+
+AddPacked PROC
+    pushad
+    clc
+L1:
+    mov al, [esi]
+    adc al, [edi]
+    daa
+    mov [edx], al
+    inc esi
+    inc edi
+    inc edx
+    loop L1
+    popad
+    ret
+AddPacked ENDP
+END main

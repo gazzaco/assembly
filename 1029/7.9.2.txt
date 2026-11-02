@@ -1,0 +1,162 @@
+7.9.2 
+
+1. AX가 EAX로 부호 확장(sign-extended)되도록 하는 시프트 명령어 시퀀스를 작성하시오. 즉, AX의 부호 비트가 EAX의 상위 16비트로 복사되어야 한다. CWD 명령어는 사용하지 마시오.
+
+[정답]
+shl eax, 16
+sar eax, 16
+
+---
+
+2. 명령어 집합에 로테이트(rotate) 명령어들이 없다고 가정한다. SHR과 조건문 분기(conditional jump) 명령어를 사용하여 AL 레지스터의 내용을 오른쪽으로 1비트 로테이트하는 방법을 제시하시오.
+
+[정답]
+    shr al, 1
+    jnc exit
+    or al, 80h
+exit:
+
+---
+
+3. EAX의 내용에 16을 곱하는 논리 시프트 명령어를 작성하시오.
+
+[정답]
+shl eax, 4
+
+---
+
+4. EBX를 4로 나누는 논리 시프트 명령어를 작성하시오.
+
+[정답]
+shr ebx, 2
+
+---
+
+5. DL 레지스터의 상위 반통과 하위 반통(상위 4비트와 하위 4비트)을 교환하는 단일 로테이트 명령어를 작성하시오.
+
+[정답]
+rol dl, 4  (또는 ror dl, 4)
+
+---
+
+6. AX 레지스터의 최상위 비트를 DX의 최하위 비트 위치로 시프트하고 DX를 왼쪽으로 1비트 시프트하는 단일 SHLD 명령어를 작성하시오.
+
+[정답]
+shld dx, ax, 1
+
+---
+
+7. 3바이트 메모리를 오른쪽으로 1비트 위치만큼 시프트하는 명령어 시퀀스를 작성하시오. 다음 테스트 데이터를 사용하시오:
+byteArray BYTE 81h, 20h, 33h
+
+[정답]
+shr byteArray+2, 1
+rcr byteArray+1, 1
+rcr byteArray, 1
+
+---
+
+8. 3워드 메모리를 왼쪽으로 1비트 위치만큼 시프트하는 명령어 시퀀스를 작성하시오. 다음 테스트 데이터를 사용하시오:
+wordArray WORD 810Dh, 0C064h, 93ABh
+
+[정답]
+shl wordArray, 1
+rcl wordArray+2, 1
+rcl wordArray+4, 1
+
+---
+
+9. -5에 3을 곱하고 그 결과를 16비트 변수 val1에 저장하는 명령어를 작성하시오.
+
+[정답]
+mov ax, -5
+mov bx, 3
+imul bx
+mov val1, ax
+
+---
+
+10. -276을 10으로 나누고 그 결과를 16비트 변수 val1에 저장하는 명령어를 작성하시오.
+
+[정답]
+mov ax, -276
+cwd
+mov bx, 10
+idiv bx
+mov val1, ax
+
+---
+
+11. 32비트 부호 없는 피연산자를 사용하여 다음 C++ 식을 어셈블리어로 구현하시오:
+val1 = (val2 * val3) / (val4 - 3)
+
+[정답]
+mov eax, val2
+mul val3
+mov ebx, val4
+sub ebx, 3
+div ebx
+mov val1, eax
+
+---
+
+12. 32비트 부호 있는 피연산자를 사용하여 다음 C++ 식을 어셈블리어로 구현하시오:
+val1 = (val2 / val3) * (val1 + val2)
+
+[정답]
+mov eax, val2
+cdq
+idiv val3
+mov ebx, val1
+add ebx, val2
+imul ebx
+mov val1, eax
+
+---
+
+13. 부호 없는 8비트 이진값을 10진수 형식으로 출력하는 프로시저를 작성하시오. 이진값은 AL로 전달한다. 입력 범위는 10진수 0~99로 제한된다. 책의 링크 라이브러리에서 호출할 수 있는 유일한 프로시저는 WriteChar이다. 프로시저는 약 8개의 명령어를 포함해야 한다. 다음은 호출 예시이다:
+mov al, 65 ; range limit: 0 to 99
+call showDecimal8
+
+[정답]
+showDecimal8 PROC
+    aam
+    add ax, 3030h
+    push ax
+    mov al, ah
+    call WriteChar
+    pop ax
+    call WriteChar
+    ret
+showDecimal8 ENDP
+
+---
+
+14. Challenge: 두 개의 알 수 없는 ASCII 10진수 숫자를 더한 결과로 AX에 0072h가 들어 있고 Auxiliary Carry 플래그가 설정되어 있다고 가정한다. Intel 64 및 IA-32 Instruction Set Reference를 사용하여 AAA 명령어의 출력 결과를 결정하시오. 답을 설명하시오.
+
+[정답]
+출력 결과: AX = 0102h
+
+설명: AAA(Ascii Adjust after Addition) 명령어는 AL의 하위 4비트가 9보다 크거나 Auxiliary Carry(AF) 플래그가 1로 설정되어 있을 때 작동한다. AF가 1로 설정되어 있으므로, AAA는 AL에 6을 더하고(2 + 6 = 8이 아닌 BCD 조정), AH를 1 증가시키며 AL의 상위 4비트를 0으로 지우고 Carry 및 Auxiliary Carry 플래그를 1로 설정한다. 따라 AX의 결과는 0102h가 된다.
+
+---
+
+15. Challenge: SUB, MOV, AND 명령어만 사용하여, n과 y 값이 주어졌을 때 x = n mod y를 계산하는 방법을 제시하시오. n은 임의의 32비트 부호 없는 정수이고, y는 2의 거듭제곱(power of 2)이라고 가정한다.
+
+[정답]
+mov eax, n
+mov ebx, y
+sub ebx, 1
+and eax, ebx
+mov x, eax
+
+---
+
+16. Challenge: SAR, ADD, XOR 명령어만 사용하여(조건 분기 없이), EAX 레지스터에 있는 부호 있는 정수의 절대값을 계산하는 코드를 작성하시오. 
+힌트: 수에 -1을 더하고 1의 보수를 구하여 음수화할 수 있다. 또한 정수를 모든 비트가 1인 값과 XOR하면 비트가 반전된다. 반면 모든 비트가 0인 값과 XOR하면 정수는 변경되지 않는다.
+
+[정답]
+mov ebx, eax
+sar ebx, 31
+xor eax, ebx
+sub eax, ebx
