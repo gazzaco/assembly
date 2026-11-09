@@ -1,0 +1,288 @@
+
+1. FindLargest 프로시저
+- 문제: 부호 있는 더블워드 배열 포인터와 길이를 받아 최댓값을 EAX에 반환
+- 답:
+FindLargest PROTO, pArray:PTR SDWORD, count:DWORD
+
+FindLargest PROC USES esi ecx edx, pArray:PTR SDWORD, count:DWORD
+    mov esi, pArray
+    mov ecx, count
+    cmp ecx, 0
+    jle L_End
+    
+    mov eax, [esi]          ; 첫 번째 원소를 최댓값으로 가정
+    add esi, 4
+    dec ecx
+
+L_Loop:
+    jecxz L_End
+    mov edx, [esi]
+    cmp edx, eax
+    jle L_Skip
+    mov eax, edx            ; 더 큰 값을 발견하면 EAX 갱신
+L_Skip:
+    add esi, 4
+    dec ecx
+    jmp L_Loop
+
+L_End:
+    ret
+FindLargest ENDP
+
+
+2. 체스판 (Chess Board)
+- 문제: 회색과 흰색 칸이 번갈아 나타나는 8x8 체스판 그리기
+- 답:
+DrawSquare PROTO, x:BYTE, y:BYTE, color:BYTE
+DrawRow PROTO, row:BYTE
+DrawBoard PROTO
+
+DrawSquare PROC, x:BYTE, y:BYTE, color:BYTE
+    INVOKE SetTextColor, color
+    mov dl, x
+    mov dh, y
+    call Gotoxy
+    mov al, ' '
+    call WriteChar
+    ret
+DrawSquare ENDP
+
+DrawRow PROC, row:BYTE
+    LOCAL col:BYTE
+    mov col, 0
+L_ColLoop:
+    cmp col, 8
+    jge L_Done
+    
+    mov al, row
+    add al, col
+    test al, 1
+    jz L_White
+    mov al, 70h         ; 회색 배경
+    jmp L_Draw
+L_White:
+    mov al, 0F0h        ; 흰색 배경
+L_Draw:
+    INVOKE DrawSquare, col, row, al
+    inc col
+    jmp L_ColLoop
+L_Done:
+    ret
+DrawRow ENDP
+
+DrawBoard PROC
+    LOCAL row:BYTE
+    mov row, 0
+L_RowLoop:
+    cmp row, 8
+    jge L_Done
+    INVOKE DrawRow, row
+    inc row
+    jmp L_RowLoop
+L_Done:
+    ret
+DrawBoard ENDP
+
+
+3. 교대 색상을 가진 체스판 (Chess Board with Alternating Colors)
+- 문제: 500ms마다 색상을 변경하며 보드를 16번 표시
+- 답:
+DisplayAnimatedBoard PROC
+    LOCAL colorIdx:DWORD
+    mov colorIdx, 0
+
+L_AnimLoop:
+    cmp colorIdx, 16
+    jge L_Exit
+    
+    call DrawBoard
+    INVOKE Sleep, 500
+    inc colorIdx
+    jmp L_AnimLoop
+L_Exit:
+    ret
+DisplayAnimatedBoard ENDP
+
+
+4. FindThrees 프로시저
+- 문제: 배열 내에 연속된 세 개의 3이 있으면 1, 아니면 0 반환
+- 답:
+FindThrees PROTO, pArray:PTR DWORD, count:DWORD
+
+FindThrees PROC USES esi ecx ebx, pArray:PTR DWORD, count:DWORD
+    mov esi, pArray
+    mov ecx, count
+    sub ecx, 2          ; 3개씩 확인하므로 count - 2번 반복
+    jl L_NotFound
+
+L_Loop:
+    cmp ecx, 0
+    jl L_NotFound
+    
+    mov eax, [esi]
+    cmp eax, 3
+    jne L_Next
+    mov eax, [esi+4]
+    cmp eax, 3
+    jne L_Next
+    mov eax, [esi+8]
+    cmp eax, 3
+    jne L_Next
+
+    mov eax, 1          ; 연속된 3개 발견
+    jmp L_Done
+
+L_Next:
+    add esi, 4
+    dec ecx
+    jmp L_Loop
+
+L_NotFound:
+    mov eax, 0
+L_Done:
+    ret
+FindThrees ENDP
+
+
+5. DifferentInputs 프로시저
+- 문제: 세 입력 매개변수의 값이 모두 다르면 1, 아니면 0 반환
+- 답:
+DifferentInputs PROTO, val1:DWORD, val2:DWORD, val3:DWORD
+
+DifferentInputs PROC, val1:DWORD, val2:DWORD, val3:DWORD
+    mov eax, val1
+    cmp eax, val2
+    je L_Same
+    cmp eax, val3
+    je L_Same
+    
+    mov eax, val2
+    cmp eax, val3
+    je L_Same
+
+    mov eax, 1          ; 모두 다름
+    ret
+L_Same:
+    mov eax, 0          ; 중복 존재
+    ret
+DifferentInputs ENDP
+
+
+6. 정수 교환 (Exchanging Integers)
+- 문제: 무작위 정수 배열에서 연속된 쌍을 Swap 프로시저로 교환
+- 답:
+SwapPairs PROC, pArray:PTR DWORD, count:DWORD
+    LOCAL i:DWORD
+    mov i, 0
+L_Loop:
+    mov eax, i
+    add eax, 1
+    cmp eax, count
+    jge L_Done
+    
+    ; INVOKE Swap, ADDR pArray[i*4], ADDR pArray[(i+1)*4]
+    
+    add i, 2
+    jmp L_Loop
+L_Done:
+    ret
+SwapPairs ENDP
+
+
+7. 최대공약수 (Greatest Common Divisor)
+- 문제: 유클리드 알고리즘의 재귀적 구현을 통한 GCD 계산
+- 답:
+CalcGCD PROTO, x:DWORD, y:DWORD
+
+CalcGCD PROC, x:DWORD, y:DWORD
+    mov eax, y
+    cmp eax, 0
+    jne L_Recurse
+    mov eax, x
+    ret
+L_Recurse:
+    mov edx, 0
+    mov eax, x
+    div y               ; EDX = x % y
+    
+    INVOKE CalcGCD, y, edx
+    ret
+CalcGCD ENDP
+
+
+8. 일치하는 원소 카운트 (Counting Matching Elements)
+- 문제: 두 배열의 대응하는 원소가 같을 때 카운트 증가 및 반환
+- 답:
+CountMatches PROTO, arr1:PTR SDWORD, arr2:PTR SDWORD, count:DWORD
+
+CountMatches PROC USES esi edi ecx edx, arr1:PTR SDWORD, arr2:PTR SDWORD, count:DWORD
+    mov esi, arr1
+    mov edi, arr2
+    mov ecx, count
+    xor edx, edx
+
+L_Loop:
+    jecxz L_Done
+    mov eax, [esi]
+    cmp eax, [edi]
+    jne L_Next
+    inc edx
+L_Next:
+    add esi, 4
+    add edi, 4
+    dec ecx
+    jmp L_Loop
+
+L_Done:
+    mov eax, edx
+    ret
+CountMatches ENDP
+
+
+9. 거의 일치하는 원소 카운트 (Counting Nearly Matching Elements)
+- 문제: 두 배열 원소의 차이가 diff 이하인 원소의 개수를 카운트하여 반환
+- 답:
+CountNearMatches PROTO, arr1:PTR SDWORD, arr2:PTR SDWORD, count:DWORD, diff:DWORD
+
+CountNearMatches PROC USES esi edi ecx ebx edx, arr1:PTR SDWORD, arr2:PTR SDWORD, count:DWORD, diff:DWORD
+    mov esi, arr1
+    mov edi, arr2
+    mov ecx, count
+    xor edx, edx
+
+L_Loop:
+    jecxz L_Done
+    mov eax, [esi]
+    sub eax, [edi]
+    jns L_CheckDiff
+    neg eax
+L_CheckDiff:
+    cmp eax, diff
+    jg L_Next
+    inc edx
+L_Next:
+    add esi, 4
+    add edi, 4
+    dec ecx
+    jmp L_Loop
+
+L_Done:
+    mov eax, edx
+    ret
+CountNearMatches ENDP
+
+
+10. 프로시저 매개변수 표시 (Show Procedure Parameters)
+- 문제: 런타임 스택의 32비트 매개변수 주소와 값을 낮은 주소에서 높은 주소 순으로 표시
+- 답:
+ShowParams PROTO, paramCount:DWORD
+
+ShowParams PROC USES esi ebp ecx edx, paramCount:DWORD
+    mov ecx, paramCount
+    mov ebp, [ebp]
+    mov esi, ebp
+    add esi, 8
+    
+    ; (스택 내 주소와 값을 형식에 맞춰 출력하는 루프 구현)
+    ret
+ShowParams ENDP
