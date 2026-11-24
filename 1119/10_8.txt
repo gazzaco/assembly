@@ -1,0 +1,519 @@
+1. mReadkey 매크로 (mReadkey Macro)
+키 입력을 기다렸다가 눌린 키를 반환하는 매크로를 작성하시오. 매크로는 ASCII 코드와 키보드 스캔 코드를 위한 매개변수를 포함해야 한다. 힌트: 교재 링크 라이브러리의 ReadChar를 호출하시오. 매크로를 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mReadkey MACRO asciiCode, scanCode
+    push eax
+    call ReadChar           ; AL = ASCII 코드, AH = 스캔 코드
+    mov asciiCode, al
+    mov scanCode, ah
+    pop eax
+ENDM
+
+.data
+ascii BYTE ?
+scan  BYTE ?
+
+.code
+main PROC
+    mReadkey ascii, scan
+    movzx eax, ascii
+    call WriteChar
+    call Crlf
+    movzx eax, scan
+    call WriteHex
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+2. mWritestringAttr 매크로 (mWritestringAttr Macro)
+주어진 텍스트 색상으로 널 종료 문자열을 콘솔에 출력하는 매크로를 작성하시오. 매크로 매개변수에는 문자열 이름과 색상이 포함되어야 한다. 힌트: 교재 링크 라이브러리의 SetTextColor를 호출하시오. 여러 색상의 다양한 문자열로 매크로를 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mWritestringAttr MACRO strName, color
+    push eax
+    push edx
+    call GetTextColor       ; 기존 색상 백업
+    push eax
+    mov eax, color
+    call SetTextColor
+    mov edx, OFFSET strName
+    call WriteString
+    pop eax
+    call SetTextColor       ; 기존 색상 복원
+    pop edx
+    pop eax
+ENDM
+
+.data
+str1 BYTE "First line in yellow", 0dh, 0ah, 0
+str2 BYTE "Second line in lightGreen", 0dh, 0ah, 0
+str3 BYTE "Third line in lightCyan", 0dh, 0ah, 0
+
+.code
+main PROC
+    mWritestringAttr str1, yellow
+    mWritestringAttr str2, lightGreen
+    mWritestringAttr str3, lightCyan
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+3. mMove32 매크로 (mMove32 Macro)
+두 개의 32비트 메모리 피연산자를 받는 mMove32라는 매크로를 작성하시오. 매크로는 원본(source) 피연산자를 대상(destination) 피연산자로 이동시켜야 한다. 매크로를 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mMove32 MACRO dest, src
+    push eax
+    mov eax, src
+    mov dest, eax
+    pop eax
+ENDM
+
+.data
+val1 DWORD 12345678h
+val2 DWORD ?
+
+.code
+main PROC
+    mMove32 val2, val1
+    mov eax, val2
+    call WriteHex
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+4. mMult32 매크로 (mMult32 Macro)
+두 개의 32비트 메모리 피연산자를 곱하여 32비트 곱(product)을 생성하는 mMult32라는 매크로를 작성하시오. 매크로를 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mMult32 MACRO product, factor1, factor2
+    push eax
+    push edx
+    mov eax, factor1
+    mul factor2
+    mov product, eax
+    pop edx
+    pop eax
+ENDM
+
+.data
+num1 DWORD 250
+num2 DWORD 400
+res  DWORD ?
+
+.code
+main PROC
+    mMult32 res, num1, num2
+    mov eax, res
+    call WriteDec
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+5. mReadInt 매크로 (mReadInt Macro)
+표준 입력으로부터 16비트 또는 32비트 부호 있는 정수를 읽어 인수에 값을 반환하는 mReadInt라는 매크로를 작성하시오. 조건부 연산자(지시어)를 사용하여 매크로가 원하는 결과의 크기에 맞게 조정되도록 하시오. 다양한 크기의 피연산자를 전달하여 매크로를 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mReadInt MACRO targetVar
+    push eax
+    call ReadInt
+    IF (TYPE targetVar) EQ 2
+        mov targetVar, ax
+    ELSEIF (TYPE targetVar) EQ 4
+        mov targetVar, eax
+    ELSE
+        ECHO Error: mReadInt requires a 16-bit or 32-bit operand.
+    ENDIF
+    pop eax
+ENDM
+
+.data
+wordVal  SWORD ?
+dwordVal SDWORD ?
+
+.code
+main PROC
+    mReadInt wordVal
+    movsx eax, wordVal
+    call WriteInt
+    call Crlf
+
+    mReadInt dwordVal
+    mov eax, dwordVal
+    call WriteInt
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+6. mWriteInt 매크로 (mWriteInt Macro)
+WriteInt 라이브러리 프로시저를 호출하여 부호 있는 정수를 표준 출력에 쓰는 mWriteInt라는 매크로를 작성하시오. 매크로에 전달되는 인수는 바이트, 워드 또는 더블워드일 수 있다. 조건부 지시어를 사용하여 인수의 크기에 맞게 조정되도록 하고, 서로 다른 크기의 인수를 전달하여 테스트하는 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mWriteInt MACRO intVal
+    push eax
+    IF (TYPE intVal) EQ 1
+        movsx eax, intVal
+    ELSEIF (TYPE intVal) EQ 2
+        movsx eax, intVal
+    ELSEIF (TYPE intVal) EQ 4
+        mov eax, intVal
+    ELSE
+        ECHO Error: Invalid operand size for mWriteInt.
+        EXITM
+    ENDIF
+    call WriteInt
+    pop eax
+ENDM
+
+.data
+bVal SBYTE -15
+wVal SWORD -3200
+dVal SDWORD 123456
+
+.code
+main PROC
+    mWriteInt bVal
+    call Crlf
+    mWriteInt wVal
+    call Crlf
+    mWriteInt dVal
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+7. 교수의 분실 휴대폰 (The Professor's Lost Phone)
+10.1.6절에서 교수가 캠퍼스를 술에 취해 걸어갈 때(Drunkard's Walk), 경로 어딘가에서 휴대폰을 잃어버렸다는 것을 발견했다. 취객의 걸음을 시뮬레이션할 때, 무작위 시간 간격(스텝)에서 교수가 서 있는 위치에 휴대폰을 떨어뜨리도록 프로그램을 수정하시오. 프로그램을 실행할 때마다 휴대폰은 서로 다른 시간 간격(및 위치)에서 분실되어야 한다.
+
+정답:
+INCLUDE Irvine32.inc
+
+WalkMax = 50
+StartX = 25
+StartY = 25
+
+DrunkardWalk STRUCT
+    path COORD WalkMax DUP(<0,0>)
+    pathsUsed WORD 0
+DrunkardWalk ENDS
+
+.data
+aWalk DrunkardWalk <>
+dropStep DWORD ?
+msgLost BYTE "Cell phone dropped at step ", 0
+msgCoord BYTE " -> Coordinates: ", 0
+
+.code
+main PROC
+    call Randomize
+    mov eax, WalkMax
+    call RandomRange        ; 0 ~ WalkMax-1 중 무작위 스텝 선택
+    mov dropStep, eax
+
+    mov esi, OFFSET aWalk
+    call TakeDrunkenWalk
+    exit
+main ENDP
+
+TakeDrunkenWalk PROC
+    pushad
+    mov edi, esi
+    add edi, OFFSET DrunkardWalk.path
+    mov ecx, WalkMax
+    mov ebx, 0              ; 현재 스텝 카운터
+    mov dl, StartX
+    mov dh, StartY
+
+Again:
+    mov (COORD PTR [edi]).X, dx
+    mov (COORD PTR [edi]).Y, dh
+
+    ; 현재 스텝이 휴대폰 분실 스텝인지 확인
+    cmp ebx, dropStep
+    jne NotDropped
+    push edx
+    mov edx, OFFSET msgLost
+    call WriteString
+    mov eax, ebx
+    call WriteDec
+    mov edx, OFFSET msgCoord
+    call WriteString
+    pop edx
+    movzx eax, dl
+    call WriteDec
+    mov al, ','
+    call WriteChar
+    movzx eax, dh
+    call WriteDec
+    call Crlf
+
+NotDropped:
+    mov eax, 4
+    call RandomRange
+    cmp eax, 0
+    jne CheckSouth
+    dec dh                  ; North
+    jmp NextStep
+CheckSouth:
+    cmp eax, 1
+    jne CheckWest
+    inc dh                  ; South
+    jmp NextStep
+CheckWest:
+    cmp eax, 2
+    jne CheckEast
+    dec dl                  ; West
+    jmp NextStep
+CheckEast:
+    inc dl                  ; East
+
+NextStep:
+    add edi, TYPE COORD
+    inc ebx
+    loop Again
+
+    mov (DrunkardWalk PTR [esi]).pathsUsed, WalkMax
+    popad
+    ret
+TakeDrunkenWalk ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+8. 확률이 적용된 취객의 걸음 (Drunkard's Walk with Probabilities)
+교수가 이전 걸음과 같은 방향으로 계속 걸을 확률이 50%, 반대 방향으로 되돌아갈 확률이 10%, 왼쪽이나 오른쪽으로 회전할 확률이 각각 20%가 되도록 프로그램을 수정하시오. 루프가 시작되기 전에 기본 시작 방향을 할당하시오.
+
+정답:
+; 방향 코드 정의: 0 = 북(North), 1 = 동(East), 2 = 남(South), 3 = 서(West)
+; 현재 방향이 currDir (0..3)에 저장되어 있다고 가정
+
+    mov currDir, 0          ; 기본 시작 방향: 북쪽(0)
+
+StepLoop:
+    ; (현재 좌표 기록 코드 생략)
+
+    mov eax, 100
+    call RandomRange        ; 0 ~ 99 사이의 난수 생성
+
+    cmp eax, 50             ; 0..49 (50% 확률): 직진 (방향 유지)
+    jb MoveForward
+
+    cmp eax, 60             ; 50..59 (10% 확률): 반대 방향 (currDir + 2) mod 4
+    jb TurnBack
+
+    cmp eax, 80             ; 60..79 (20% 확률): 우회전 (currDir + 1) mod 4
+    jb TurnRight
+
+    ; 80..99 (20% 확률): 좌회전 (currDir + 3) mod 4
+    add currDir, 3
+    and currDir, 3
+    jmp MoveForward
+
+TurnBack:
+    add currDir, 2
+    and currDir, 3
+    jmp MoveForward
+
+TurnRight:
+    inc currDir
+    and currDir, 3
+
+MoveForward:
+    cmp currDir, 0
+    jne Dir1
+    dec dh                  ; North
+    jmp DoneMove
+Dir1:
+    cmp currDir, 1
+    jne Dir2
+    inc dl                  ; East
+    jmp DoneMove
+Dir2:
+    cmp currDir, 2
+    jne Dir3
+    inc dh                  ; South
+    jmp DoneMove
+Dir3:
+    dec dl                  ; West
+DoneMove:
+
+--------------------------------------------------------------------------------
+
+9. 다중 더블워드 시프트 (Shifting Multiple Doublewords)
+SHRD 및 SHLD 명령어를 사용하여 32비트 정수 배열을 양방향 중 하나로 가변 비트 수만큼 시프트하는 매크로를 작성하시오. 배열이 리틀 엔디언(little-endian) 순서라고 가정하고, 양방향으로 시프트하여 결과를 표시하는 테스트 프로그램을 작성하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+mShiftDoublewords MACRO arrayName, direction, numberOfBits
+    LOCAL L1, ShiftLeft, Done
+    push eax
+    push ebx
+    push ecx
+    push esi
+
+    mov ecx, (LENGTHOF arrayName) - 1
+    mov bl, numberOfBits
+
+    IFIDNI <direction>, <L>
+        ; 왼쪽 시프트: 최상위 더블워드(배열 끝)에서 시작하여 아래로 이동
+        mov esi, OFFSET arrayName + (SIZEOF arrayName) - 4
+    L1:
+        mov eax, [esi - 4]
+        push ecx
+        mov cl, bl
+        shld [esi], eax, cl
+        pop ecx
+        sub esi, 4
+        loop L1
+        mov cl, bl
+        shl DWORD PTR [esi], cl
+    ELSEIFIDNI <direction>, <R>
+        ; 오른쪽 시프트: 최하위 더블워드(배열 시작)에서 시작하여 위로 이동
+        mov esi, OFFSET arrayName
+    L1:
+        mov eax, [esi + 4]
+        push ecx
+        mov cl, bl
+        shrd [esi], eax, cl
+        pop ecx
+        add esi, 4
+        loop L1
+        mov cl, bl
+        shr DWORD PTR [esi], cl
+    ELSE
+        ECHO Error: Direction must be R or L.
+    ENDIF
+
+    pop esi
+    pop ecx
+    pop ebx
+    pop eax
+ENDM
+
+.data
+arr DWORD 12345678h, 9ABCDEF0h, 11223344h
+
+.code
+main PROC
+    mShiftDoublewords arr, L, 4
+    mov eax, arr[8]
+    call WriteHex
+    call Crlf
+
+    mShiftDoublewords arr, R, 4
+    mov eax, arr[8]
+    call WriteHex
+    call Crlf
+    exit
+main ENDP
+END main
+
+--------------------------------------------------------------------------------
+
+10. 3-피연산자 명령어 (Three-Operand Instructions)
+EAX는 매크로 연산용으로 예약되어 보존되지 않으며, 매크로에 의해 수정되는 다른 레지스터는 보존되어야 한다. 모든 매개변수는 부호 있는 메모리 더블워드이다. add3, sub3, mul3, div3 매크로를 작성하고 다중 연산을 포함하는 4개의 산술 표현식을 구현하여 테스트하시오.
+
+정답:
+INCLUDE Irvine32.inc
+
+add3 MACRO dest, src1, src2
+    mov eax, src1
+    add eax, src2
+    mov dest, eax
+ENDM
+
+sub3 MACRO dest, src1, src2
+    mov eax, src1
+    sub eax, src2
+    mov dest, eax
+ENDM
+
+mul3 MACRO dest, src1, src2
+    push edx
+    mov eax, src1
+    imul src2
+    mov dest, eax
+    pop edx
+ENDM
+
+div3 MACRO dest, src1, src2
+    push edx
+    mov eax, src1
+    cdq
+    idiv src2
+    mov dest, eax
+    pop edx
+ENDM
+
+.data
+w SDWORD 10
+y SDWORD 5
+z SDWORD 4
+x SDWORD ?
+t1 SDWORD ?
+t2 SDWORD ?
+
+.code
+main PROC
+    ; 표현식 1: x = (w + y) * z
+    add3 t1, w, y
+    mul3 x, t1, z
+    mov eax, x
+    call WriteInt
+    call Crlf
+
+    ; 표현식 2: x = (w - y) / z
+    sub3 t1, w, y
+    div3 x, t1, z
+    mov eax, x
+    call WriteInt
+    call Crlf
+
+    ; 표현식 3: x = (w * y) + (z * 2)
+    mul3 t1, w, y
+    add3 t2, z, z
+    add3 x, t1, t2
+    mov eax, x
+    call WriteInt
+    call Crlf
+
+    ; 표현식 4: x = ((w + z) - y) * y
+    add3 t1, w, z
+    sub3 t2, t1, y
+    mul3 x, t2, y
+    mov eax, x
+    call WriteInt
+    call Crlf
+    exit
+main ENDP
+END main
